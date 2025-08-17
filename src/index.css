@@ -1,0 +1,62 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ===== Global base & typography ===== */
+@layer base {
+  :root {
+    font-family: 'Noto Sans Thai', system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  html, body, #root { height: 100%; }
+
+  /* พื้นหลังชมพูหวาน + กราเดียนต์นุ่มตา */
+  body {
+    @apply text-dark m-0 min-w-[320px];
+    /* fallback color */
+    background-color: #FFF5FA;
+    /* gradients ซ้อนกันให้ละมุน */
+    background-image:
+      radial-gradient(80rem 60rem at -10% 0%, rgba(244, 114, 182, 0.22), transparent 65%),
+      radial-gradient(64rem 48rem at 110% -10%, rgba(167, 139, 250, 0.18), transparent 60%),
+      linear-gradient(180deg, #FFF5FA 0%, #FFEAF4 100%);
+    background-attachment: fixed;
+  }
+
+  a { @apply text-primary underline-offset-4 transition-colors; }
+  a:hover { @apply text-[#6D28D9]; }
+
+  h1 { @apply text-3xl md:text-4xl lg:text-5xl font-semibold text-primary leading-tight; }
+  h2 { @apply text-2xl md:text-3xl font-semibold text-primary; }
+  h3 { @apply text-xl md:text-2xl font-semibold text-dark; }
+}
+
+/* ===== Components (ใช้สีจาก tailwind.config.js) ===== */
+@layer components {
+  .card { @apply bg-white border border-accent rounded-2xl shadow-soft p-5; }
+  .muted { @apply text-dark/70; }
+
+  .btn-primary {
+    @apply inline-flex items-center gap-2 px-4 py-2 rounded-2xl
+           bg-primary text-white font-medium shadow-soft
+           hover:bg-[#6D28D9] hover:shadow-soft-hover
+           focus:outline-none focus:ring-4 focus:ring-accent;
+  }
+  .btn-ghost {
+    @apply inline-flex items-center gap-2 px-3 py-2 rounded-2xl
+           text-primary hover:bg-secondary/20;
+  }
+
+  .badge {
+    @apply inline-flex items-center px-2.5 py-1 rounded-xl text-xs
+           bg-accent/40 text-dark border border-accent;
+  }
+  .kbd { @apply px-1.5 py-0.5 rounded-md bg-white border border-accent text-dark/70; }
+}
+
+/* Extra */
+@keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+.animate-float { animation: float 3s ease-in-out infinite; }
