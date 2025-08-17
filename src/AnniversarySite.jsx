@@ -59,14 +59,14 @@ const DEFAULT_CONFIG = {
   yourName: "Songpanon",
   partnerName: "Waranya",
   anniversaryDate: "2025-06-18",
-  songUrl: "./src/sound/QLER- จีบ.mp3",
+  songUrl: "/sound/QLER- จีบ.mp3",
   images: [
-    "./src/img/IMG_0453.jpg",
-    "./src/img/IMG_1987.jpg",
-    "./src/img/IMG_4716.JPG",
-    "./src/img/IMG_5572.JPG",
-    "./src/img/IMG_5579.JPG",
-    "./src/img/IMG_4711.JPG",
+    "/img/IMG_0453.jpg",
+    "/img/IMG_1987.jpg",
+    "/img/IMG_4716.JPG",
+    "/img/IMG_5572.JPG",
+    "/img/IMG_5579.JPG",
+    "/img/IMG_4711.JPG",
   ],
   milestones: [
     {
@@ -89,12 +89,12 @@ const DEFAULT_CONFIG = {
     },
   ],
   imageCards: [
-    { src: "./src/img/IMG_2368.jpg", caption: "ถ่ายโฟโต้บูธด้วยกัน 🌊" },
+    { src: "/img/IMG_2368.jpg", caption: "ถ่ายโฟโต้บูธด้วยกัน 🌊" },
     {
-      src: "./src/img/86B4C785-7414-49D6-B1AF-4F6B718E6062.JPG",
+      src: "/img/86B4C785-7414-49D6-B1AF-4F6B718E6062.JPG",
       caption: "เดินเล่นที่มอ 🌸",
     },
-    { src: "./src/img/IMG_5574.JPG", caption: "ชอบรูปนี้มากกก 🐶" },
+    { src: "/img/IMG_5574.JPG", caption: "ชอบรูปนี้มากกก 🐶" },
   ],
 };
 
