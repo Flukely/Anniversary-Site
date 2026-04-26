@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import {AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion"; // eslint-disable-line no-unused-vars
 import {
   Heart,
   Music2,
@@ -12,6 +12,7 @@ import {
   ChevronLeft,
   ChevronRight,
   X,
+  Bell,
 } from "lucide-react";
 
 /* ---------- Floating Hearts Effect ---------- */
@@ -282,8 +283,6 @@ function Countdown({ startDate }) {
 function MusicPlayer({ url }) {
   const audioRef = useRef(null);
   const [playing, setPlaying] = useState(false);
-  const [setProgress] = useState(0);
-
   const toggle = () => {
     const a = audioRef.current;
     if (!a) return;
@@ -294,14 +293,6 @@ function MusicPlayer({ url }) {
       a.play().then(() => setPlaying(true)).catch(() => alert("กดอีกครั้งเพื่อเล่นเพลง"));
     }
   };
-
-  useEffect(() => {
-    const a = audioRef.current;
-    if (!a) return;
-    const update = () => setProgress(a.duration ? (a.currentTime / a.duration) * 100 : 0);
-    a.addEventListener("timeupdate", update);
-    return () => a.removeEventListener("timeupdate", update);
-  }, [setProgress]);
 
   if (!url) return null;
   return (
@@ -503,109 +494,309 @@ function SectionTitle({ icon, title, subtitle }) {
   );
 }
 
+/* ---------- Custom Day/Month Picker ---------- */
+const MONTHS_TH = [
+  "มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน",
+  "กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม",
+];
+
+function DayMonthPicker({ day, month, onDayChange, onMonthChange }) {
+  const daysInMonth = new Date(2000, month, 0).getDate(); // days in selected month
+  const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+
+  return (
+    <div className="flex gap-3 w-full">
+      {/* Day */}
+      <div className="flex-1">
+        <label className="text-xs text-dark/50 font-medium mb-1.5 block text-left">วันที่</label>
+        <div className="relative">
+          <select
+            value={day}
+            onChange={(e) => onDayChange(Number(e.target.value))}
+            className="w-full appearance-none px-4 py-3 rounded-2xl border border-pink-200 bg-pink-50/60 text-dark text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition cursor-pointer"
+          >
+            <option value={0} disabled>วัน</option>
+            {days.map((d) => (
+              <option key={d} value={d}>{d}</option>
+            ))}
+          </select>
+          <ChevronRight className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-dark/30 rotate-90" />
+        </div>
+      </div>
+
+      {/* Month */}
+      <div className="flex-[2]">
+        <label className="text-xs text-dark/50 font-medium mb-1.5 block text-left">เดือน</label>
+        <div className="relative">
+          <select
+            value={month}
+            onChange={(e) => onMonthChange(Number(e.target.value))}
+            className="w-full appearance-none px-4 py-3 rounded-2xl border border-pink-200 bg-pink-50/60 text-dark text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition cursor-pointer"
+          >
+            <option value={0} disabled>เดือน</option>
+            {MONTHS_TH.map((m, i) => (
+              <option key={i + 1} value={i + 1}>{m}</option>
+            ))}
+          </select>
+          <ChevronRight className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-dark/30 rotate-90" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ---------- Notification Panel (Web Push) ---------- */
+function NotificationPanel({ anniversaryDate }) {
+  const [status, setStatus] = useState("idle"); // idle | requesting | granted | denied | unsupported
+  const [scheduled, setScheduled] = useState(false);
+
+  useEffect(() => {
+    if (!("Notification" in window)) { setStatus("unsupported"); return; }
+    if (Notification.permission === "granted") setStatus("granted");
+    if (Notification.permission === "denied") setStatus("denied");
+    // check if already scheduled
+    if (localStorage.getItem("anniv_notify") === "1") setScheduled(true);
+  }, []);
+
+  const requestPermission = async () => {
+    if (!("Notification" in window)) { setStatus("unsupported"); return; }
+    setStatus("requesting");
+    const perm = await Notification.requestPermission();
+    setStatus(perm);
+    if (perm === "granted") scheduleReminder();
+  };
+
+  const scheduleReminder = () => {
+    // คำนวณวันครบรอบเดือนถัดไป
+    const base = new Date(anniversaryDate);
+    const now = new Date();
+    const targetDay = base.getDate();
+    let next = new Date(now.getFullYear(), now.getMonth(), targetDay, 9, 0, 0);
+    if (next <= now) next = new Date(now.getFullYear(), now.getMonth() + 1, targetDay, 9, 0, 0);
+    const msUntil = next.getTime() - now.getTime();
+
+    setTimeout(() => {
+      new Notification("💕 วันครบรอบของเราวันนี้!", {
+        body: `วันนี้ครบรอบอีกเดือนแล้วนะ อย่าลืมบอกรักกัน 🌸`,
+        icon: "/img/IMG_0453.jpg",
+      });
+    }, msUntil);
+
+    localStorage.setItem("anniv_notify", "1");
+    setScheduled(true);
+  };
+
+  const cancel = () => {
+    localStorage.removeItem("anniv_notify");
+    setScheduled(false);
+  };
+
+  const stateMap = {
+    unsupported: {
+      icon: "🔕", color: "text-dark/40 border-dark/10 bg-white/50",
+      text: "เบราว์เซอร์นี้ไม่รองรับการแจ้งเตือน",
+      action: null,
+    },
+    denied: {
+      icon: "🚫", color: "text-red-400 border-red-100 bg-red-50/60",
+      text: "การแจ้งเตือนถูกปิดกั้น — เปิดใน Settings ของเบราว์เซอร์",
+      action: null,
+    },
+    granted: {
+      icon: scheduled ? "🔔" : "🔕",
+      color: scheduled
+        ? "text-primary border-violet-200 bg-violet-50/60"
+        : "text-dark/60 border-pink-100 bg-white/60",
+      text: scheduled
+        ? "เปิดแจ้งเตือนวันครบรอบทุกเดือนแล้ว ✨"
+        : "กดเปิดเพื่อรับแจ้งเตือนวันครบรอบ",
+      action: scheduled ? cancel : scheduleReminder,
+      actionLabel: scheduled ? "ปิดการแจ้งเตือน" : "เปิดการแจ้งเตือน",
+    },
+    idle: {
+      icon: "🔔",
+      color: "text-dark/60 border-pink-100 bg-white/60",
+      text: "รับแจ้งเตือนวันครบรอบทุกเดือน",
+      action: requestPermission,
+      actionLabel: "เปิดการแจ้งเตือน",
+    },
+    requesting: {
+      icon: "⏳", color: "text-dark/50 border-pink-100 bg-white/60",
+      text: "รอการอนุญาต...",
+      action: null,
+    },
+  };
+
+  const s = stateMap[status] || stateMap.idle;
+
+  return (
+    <div className={`flex items-center gap-3 px-4 py-3 rounded-2xl border ${s.color} transition-all`}>
+      <span className="text-xl flex-shrink-0">{s.icon}</span>
+      <p className="text-xs flex-1 leading-snug">{s.text}</p>
+      {s.action && (
+        <motion.button
+          whileTap={{ scale: 0.95 }}
+          onClick={s.action}
+          className="flex-shrink-0 text-xs px-3 py-1.5 rounded-xl bg-primary text-white font-medium hover:bg-[#6D28D9] transition"
+        >
+          {s.actionLabel}
+        </motion.button>
+      )}
+    </div>
+  );
+}
+
 /* ---------- Login Gate ---------- */
 function AnniversaryGate({ expectedDate, onUnlock }) {
-  const [value, setValue] = useState("");
+  // parse expected day/month from "YYYY-MM-DD"
+  const [expMonth, expDay] = expectedDate.split("-").slice(1).map(Number);
+
+  const [day, setDay] = useState(0);
+  const [month, setMonth] = useState(0);
   const [remember, setRemember] = useState(true);
   const [error, setError] = useState("");
   const [shake, setShake] = useState(false);
+  const [step, setStep] = useState("lock"); // lock | notify
 
   useEffect(() => {
     if (sessionStorage.getItem("anniv_unlocked") === "1") onUnlock();
   }, [onUnlock]);
 
   const handleEnter = () => {
-    const norm = (s) => (s || "").trim();
-    if (norm(value) === norm(expectedDate)) {
+    if (day === 0 || month === 0) {
+      setError("กรุณาเลือกวันและเดือนด้วยนะ 🥺");
+      setShake(true); setTimeout(() => setShake(false), 600); return;
+    }
+    if (day === expDay && month === expMonth) {
       if (remember) sessionStorage.setItem("anniv_unlocked", "1");
-      onUnlock();
+      setStep("notify"); // go to notification step
     } else {
       setError("วันที่ไม่ตรง ลองใหม่นะคะ 🥺");
-      setShake(true);
-      setTimeout(() => setShake(false), 600);
+      setShake(true); setTimeout(() => setShake(false), 600);
     }
   };
 
   return (
     <motion.div
       className="fixed inset-0 z-40 flex items-center justify-center px-4"
-      style={{
-        background: "linear-gradient(135deg, #FFF0F8 0%, #F3E8FF 50%, #FFF0F8 100%)",
-      }}
+      style={{ background: "linear-gradient(135deg, #FFF0F8 0%, #F3E8FF 50%, #FFF0F8 100%)" }}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
     >
-      {/* Decorative circles */}
+      {/* Decorative blobs */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute -top-32 -left-32 w-80 h-80 rounded-full bg-pink-200/30 blur-3xl" />
-        <div className="absolute -bottom-32 -right-32 w-96 h-96 rounded-full bg-violet-200/30 blur-3xl" />
+        <div className="absolute -top-40 -left-40 w-96 h-96 rounded-full bg-pink-200/25 blur-3xl" />
+        <div className="absolute -bottom-40 -right-40 w-[28rem] h-[28rem] rounded-full bg-violet-200/25 blur-3xl" />
+        <motion.div
+          className="absolute top-1/4 right-1/4 w-32 h-32 rounded-full bg-pink-300/15 blur-2xl"
+          animate={{ scale: [1, 1.3, 1], opacity: [0.5, 1, 0.5] }}
+          transition={{ duration: 4, repeat: Infinity }}
+        />
       </div>
 
-      <motion.div
-        animate={shake ? { x: [-8, 8, -6, 6, -3, 3, 0] } : { x: 0 }}
-        transition={{ duration: 0.5 }}
-        className="relative w-full max-w-sm"
-      >
-        <div className="rounded-3xl border border-pink-200/80 bg-white/90 backdrop-blur-xl shadow-2xl p-7 text-center">
-          {/* Icon */}
+      <AnimatePresence mode="wait">
+        {step === "lock" ? (
           <motion.div
-            className="mx-auto mb-4 w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-100 to-pink-100 flex items-center justify-center shadow-soft"
-            animate={{ rotate: [0, -5, 5, 0] }}
-            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+            key="lock"
+            animate={shake ? { x: [-8, 8, -6, 6, -3, 3, 0] } : { x: 0 }}
+            transition={{ duration: 0.5 }}
+            className="relative w-full max-w-sm"
+            initial={{ opacity: 0, y: 16 }}
+            exit={{ opacity: 0, y: -16 }}
           >
-            <Lock className="w-7 h-7 text-primary" />
+            <div className="rounded-3xl border border-pink-200/80 bg-white/90 backdrop-blur-xl shadow-2xl p-7 text-center">
+              {/* Animated lock icon */}
+              <motion.div
+                className="mx-auto mb-5 w-18 h-18 rounded-2xl bg-gradient-to-br from-violet-100 to-pink-100 flex items-center justify-center shadow-soft"
+                style={{ width: 72, height: 72 }}
+                animate={{ rotate: [0, -6, 6, 0] }}
+                transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
+              >
+                <span className="text-3xl">🔒</span>
+              </motion.div>
+
+              <h2 className="text-2xl font-bold text-primary mb-1">ยินดีต้อนรับ 💕</h2>
+              <p className="text-sm text-dark/55 mb-6 leading-relaxed">
+                กรอก <span className="font-semibold text-primary">วันและเดือน</span> ที่เราเริ่มคบกัน
+              </p>
+
+              <DayMonthPicker
+                day={day} month={month}
+                onDayChange={(d) => { setDay(d); setError(""); }}
+                onMonthChange={(m) => { setMonth(m); setError(""); }}
+              />
+
+              <AnimatePresence>
+                {error && (
+                  <motion.p
+                    initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                    className="text-red-400 text-xs mt-3 text-left"
+                  >
+                    {error}
+                  </motion.p>
+                )}
+              </AnimatePresence>
+
+              <div className="flex items-center mt-5 mb-5">
+                <label className="text-sm flex items-center gap-2 text-dark/55 cursor-pointer select-none">
+                  <input type="checkbox" checked={remember}
+                    onChange={(e) => setRemember(e.target.checked)}
+                    className="accent-primary w-4 h-4" />
+                  จำฉันไว้วันนี้
+                </label>
+              </div>
+
+              <motion.button
+                onClick={handleEnter}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.96 }}
+                className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-gradient-to-r from-primary to-pink-500 text-white font-semibold shadow-soft hover:shadow-soft-hover transition-all text-sm"
+              >
+                <Unlock className="w-4 h-4" /> เข้าชมเลย ✨
+              </motion.button>
+
+              <p className="text-xs text-dark/25 mt-5">only you know 🤍</p>
+            </div>
           </motion.div>
 
-          <h2 className="text-2xl font-bold text-primary mb-1">ยินดีต้อนรับ 💕</h2>
-          <p className="text-sm text-dark/60 mb-6">
-            กรอกวันที่เราเริ่มคบกันเพื่อเข้าชม
-          </p>
-
-          <input
-            type="date"
-            className="w-full px-4 py-3 rounded-2xl border border-pink-200 bg-pink-50/50 text-dark focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition text-sm"
-            value={value}
-            onChange={(e) => { setValue(e.target.value); setError(""); }}
-            onKeyDown={(e) => e.key === "Enter" && handleEnter()}
-          />
-
-          <AnimatePresence>
-            {error && (
-              <motion.p
-                initial={{ opacity: 0, y: -5 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                className="text-red-500 text-xs mt-2"
-              >
-                {error}
-              </motion.p>
-            )}
-          </AnimatePresence>
-
-          <div className="flex items-center justify-between mt-4 mb-5">
-            <label className="text-sm flex items-center gap-2 text-dark/60 cursor-pointer select-none">
-              <input
-                type="checkbox"
-                checked={remember}
-                onChange={(e) => setRemember(e.target.checked)}
-                className="accent-primary"
-              />
-              จำฉันไว้
-            </label>
-          </div>
-
-          <motion.button
-            onClick={handleEnter}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.97 }}
-            className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl bg-gradient-to-r from-primary to-pink-500 text-white font-semibold shadow-soft hover:shadow-soft-hover transition-all"
+        ) : (
+          /* Notification step */
+          <motion.div
+            key="notify"
+            className="relative w-full max-w-sm"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0 }}
           >
-            <Unlock className="w-4 h-4" /> เข้าชมเลย
-          </motion.button>
+            <div className="rounded-3xl border border-pink-200/80 bg-white/90 backdrop-blur-xl shadow-2xl p-7 text-center">
+              <motion.div
+                className="mx-auto mb-5 flex items-center justify-center"
+                style={{ width: 72, height: 72 }}
+                animate={{ scale: [1, 1.1, 1] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              >
+                <span className="text-5xl">🔔</span>
+              </motion.div>
 
-          <p className="text-xs text-dark/30 mt-4">only you know 🤍</p>
-        </div>
-      </motion.div>
+              <h2 className="text-2xl font-bold text-primary mb-1">อยากรับแจ้งเตือนไหม? 💌</h2>
+              <p className="text-sm text-dark/55 mb-6 leading-relaxed">
+                เปิดให้เราแจ้งเตือนวันครบรอบ<br />ทุกเดือนเลยนะ อย่าลืมกัน 🌸
+              </p>
+
+              <NotificationPanel anniversaryDate={expectedDate} />
+
+              <motion.button
+                onClick={onUnlock}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.96 }}
+                className="mt-5 w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-gradient-to-r from-primary to-pink-500 text-white font-semibold shadow-soft hover:shadow-soft-hover transition-all text-sm"
+              >
+                <Heart className="w-4 h-4 fill-white" /> เข้าชมเว็บเลย 💕
+              </motion.button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }
