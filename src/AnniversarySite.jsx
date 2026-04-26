@@ -58,7 +58,7 @@ function HeartBurst({ onDone }) {
 const DEFAULT_CONFIG = {
   yourName: "Songpanon",
   partnerName: "Waranya",
-  anniversaryDate: "2025-06-18",
+  anniversaryDate: "2025-06-19",
   songUrl: "/sound/QLER- จีบ.mp3",
   images: [
     "/img/IMG_0453.jpg",
