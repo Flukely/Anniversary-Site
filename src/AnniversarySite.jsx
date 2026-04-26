@@ -7,12 +7,10 @@ import {
   CalendarDays,
   Camera,
   Sparkles,
-  Lock,
   Unlock,
   ChevronLeft,
   ChevronRight,
   X,
-  Bell,
 } from "lucide-react";
 
 /* ---------- Floating Hearts Effect ---------- */
@@ -688,7 +686,7 @@ function AnniversaryGate({ expectedDate, onUnlock }) {
         <div className="absolute -top-40 -left-40 w-96 h-96 rounded-full bg-pink-200/25 blur-3xl" />
         <div className="absolute -bottom-40 -right-40 w-[28rem] h-[28rem] rounded-full bg-violet-200/25 blur-3xl" />
         <motion.div
-          className="absolute top-1/4 right-1/4 w-32 h-32 rounded-full bg-pink-300/15 blur-2xl"
+          className="absolute top-1/4 right-1/4 w-32 h-32 rounded-full bg-pink-300/20 blur-2xl"
           animate={{ scale: [1, 1.3, 1], opacity: [0.5, 1, 0.5] }}
           transition={{ duration: 4, repeat: Infinity }}
         />
