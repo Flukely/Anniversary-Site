@@ -696,11 +696,14 @@ function AnniversaryGate({ expectedDate, onUnlock }) {
         {step === "lock" ? (
           <motion.div
             key="lock"
-            animate={shake ? { x: [-8, 8, -6, 6, -3, 3, 0] } : { x: 0 }}
-            transition={{ duration: 0.5 }}
             className="relative w-full max-w-sm"
             initial={{ opacity: 0, y: 16 }}
+            animate={shake
+              ? { opacity: 1, y: 0, x: [-8, 8, -6, 6, -3, 3, 0] }
+              : { opacity: 1, y: 0, x: 0 }
+            }
             exit={{ opacity: 0, y: -16 }}
+            transition={{ duration: shake ? 0.5 : 0.4 }}
           >
             <div className="rounded-3xl border border-pink-200/80 bg-white/90 backdrop-blur-xl shadow-2xl p-7 text-center">
               {/* Animated lock icon */}
